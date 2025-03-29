@@ -1,0 +1,951 @@
+index1.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Story Illustrator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #f59e0b;
+            --background: #f3f4f6;
+            --card: #ffffff;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            margin-bottom: 2rem;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--card);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
+            height: 100%;
+        }
+
+        .story-input {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .story-output {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 2rem 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .story-display {
+            margin-bottom: 2rem;
+        }
+
+        .illustration-container {
+            position: relative;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            overflow: hidden;
+            min-height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9fafb;
+        }
+
+        .illustration {
+            width: 100%;
+            height: auto;
+            max-height: 500px;
+            object-fit: contain;
+        }
+
+        .save-button {
+            background-color: var(--secondary);
+            margin-top: 1rem;
+        }
+
+        .save-button:hover {
+            background-color: #d97706;
+        }
+
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.375rem;
+            background-color: #fee2e2;
+            color: #b91c1c;
+            display: none;
+        }
+
+        .scene-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .scene-button {
+            background-color: var(--primary-light);
+            flex: 1;
+            margin: 0 0.25rem;
+        }
+
+        .active-scene {
+            background-color: var(--primary-dark);
+        }
+
+        .templates-section {
+            margin-top: 2rem;
+        }
+
+        .template-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .template-button {
+            background-color: #e5e7eb;
+            color: var(--text);
+            padding: 0.5rem 1rem;
+        }
+
+        .template-button:hover {
+            background-color: #d1d5db;
+        }
+
+        .options-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .option-select {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+        
+        .api-info {
+            margin-top: 0.5rem;
+            color: var(--text-light);
+        }
+
+        .api-info a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .api-info a:hover {
+            text-decoration: underline;
+        }
+        
+        .generation-status {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+        
+        .status-loading {
+            background-color: #dbeafe;
+            color: #1e40af;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-error {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        
+        .status-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .small-spinner {
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 2px solid var(--primary);
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+
+        .collapsible {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            border-radius: 0.375rem;
+        }
+
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .collapsible-content {
+            display: none;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Story Illustrator</h1>
+            <p class="subtitle">Write your story, and watch it come to life with AI-generated illustrations</p>
+        </header>
+
+        <div class="app-container">
+            <div class="card story-input">
+                <h2>Your Story</h2>
+                <div class="alert" id="error-alert">Something went wrong. Please try again.</div>
+                
+                <div class="input-group">
+                    <label for="story-title">Story Title</label>
+                    <input type="text" id="story-title" placeholder="Enter a title for your story">
+                </div>
+                
+                <div class="input-group">
+                    <label for="story-content">Story Description (brief plot summary)</label>
+                    <textarea id="story-content" placeholder="Once upon a time..."></textarea>
+                </div>
+
+                <div class="collapsible">
+                    <div class="collapsible-header" id="api-settings-header">
+                        <span>API Settings</span>
+                        <span>▼</span>
+                    </div>
+                    <div class="collapsible-content" id="api-settings-content">
+                        <div class="input-group">
+                            <label for="huggingface-key">Hugging Face API Key</label>
+                            <input type="password" id="huggingface-key" placeholder="Enter your Hugging Face API key">
+                            <div class="api-info">
+                                <small>Required for AI generation. Get a key at <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co</a></small>
+                            </div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="text-model">Text Generation Model</label>
+                            <select id="text-model" class="option-select">
+                                <option value="TinyLlama/TinyLlama-1.1B-Chat-v1.0">TinyLlama 1.1B Chat</option>
+                                <option value="google/flan-t5-small">Flan-T5 Small</option>
+                                <option value="mistralai/Mistral-7B-Instruct-v0.1">Mistral 7B Instruct</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="image-model">Image Generation Model</label>
+                            <select id="image-model" class="option-select">
+                                <option value="stabilityai/stable-diffusion-2-1">Stable Diffusion 2.1</option>
+                                <option value="runwayml/stable-diffusion-v1-5">Stable Diffusion 1.5</option>
+                                <option value="prompthero/openjourney">OpenJourney</option>
+                                <option value="dreamlike-art/dreamlike-diffusion-1.0">Dreamlike Diffusion</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="options-group">
+                    <select id="art-style" class="option-select">
+                        <option value="watercolor style">Watercolor</option>
+                        <option value="digital art">Digital Art</option>
+                        <option value="oil painting">Oil Painting</option>
+                        <option value="anime style">Anime</option>
+                        <option value="photorealistic">Photorealistic</option>
+                        <option value="pixel art">Pixel Art</option>
+                        <option value="comic book style">Comic Book</option>
+                        <option value="3D render">3D Render</option>
+                    </select>
+                    
+                    <select id="scene-count" class="option-select">
+                        <option value="3">3 Scenes</option>
+                        <option value="4">4 Scenes</option>
+                        <option value="5">5 Scenes</option>
+                    </select>
+                </div>
+                
+                <button id="generate-btn">Generate Illustrated Story</button>
+                
+                <div id="generation-status" class="generation-status status-loading">
+                    <div id="status-spinner" class="small-spinner"></div>
+                    <span id="status-message">Processing your story...</span>
+                </div>
+
+                <div class="templates-section">
+                    <h3>Story Templates</h3>
+                    <div class="template-buttons">
+                        <button class="template-button" data-template="fantasy">Fantasy Adventure</button>
+                        <button class="template-button" data-template="scifi">Sci-Fi Journey</button>
+                        <button class="template-button" data-template="mystery">Mystery Tale</button>
+                        <button class="template-button" data-template="fairytale">Fairy Tale</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card story-output">
+                <h2>Your Illustrated Story</h2>
+                
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                </div>
+                
+                <div id="result-container" style="display: none;">
+                    <div class="scene-nav" id="scene-nav">
+                        <!-- Scene buttons will be added here -->
+                    </div>
+                    
+                    <div class="story-display">
+                        <h3 id="scene-title">Scene Title</h3>
+                        <div id="scene-text"></div>
+                    </div>
+                    
+                    <div class="illustration-container">
+                        <div id="illustration-placeholder">Illustrations will appear here</div>
+                        <img id="illustration-img" class="illustration" style="display: none;">
+                    </div>
+                    
+                    <button id="save-btn" class="save-button">Save Story</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const storyTitleInput = document.getElementById('story-title');
+            const storyContentInput = document.getElementById('story-content');
+            const huggingfaceKeyInput = document.getElementById('huggingface-key');
+            const textModelSelect = document.getElementById('text-model');
+            const imageModelSelect = document.getElementById('image-model');
+            const artStyleSelect = document.getElementById('art-style');
+            const sceneCountSelect = document.getElementById('scene-count');
+            const generateBtn = document.getElementById('generate-btn');
+            const saveBtn = document.getElementById('save-btn');
+            const loadingElement = document.getElementById('loading');
+            const resultContainer = document.getElementById('result-container');
+            const sceneNavElement = document.getElementById('scene-nav');
+            const sceneTitleElement = document.getElementById('scene-title');
+            const sceneTextElement = document.getElementById('scene-text');
+            const illustrationPlaceholder = document.getElementById('illustration-placeholder');
+            const illustrationImg = document.getElementById('illustration-img');
+            const errorAlert = document.getElementById('error-alert');
+            const templateButtons = document.querySelectorAll('.template-button');
+            const generationStatus = document.getElementById('generation-status');
+            const statusMessage = document.getElementById('status-message');
+            const apiSettingsHeader = document.getElementById('api-settings-header');
+            const apiSettingsContent = document.getElementById('api-settings-content');
+
+            // Toggle collapsible sections
+            apiSettingsHeader.addEventListener('click', function() {
+                const content = apiSettingsContent;
+                if (content.style.display === 'block') {
+                    content.style.display = 'none';
+                    this.querySelector('span:last-child').textContent = '▼';
+                } else {
+                    content.style.display = 'block';
+                    this.querySelector('span:last-child').textContent = '▲';
+                }
+            });
+
+            // State
+            let currentStory = null;
+            let currentSceneIndex = 0;
+
+            // Story templates
+            const storyTemplates = {
+                fantasy: {
+                    title: "The Crystal Guardian",
+                    content: "In the enchanted realm of Eldoria, a young apprentice named Lyra discovered an ancient crystal that glowed with mysterious power. The village elders warned that the crystal was the heart of a sleeping guardian, bound to protect the realm from darkness. When shadow creatures began emerging from the forgotten caves, Lyra realized she must awaken the crystal guardian before the eternal night engulfed their world."
+                },
+                scifi: {
+                    title: "Echoes of Proxima",
+                    content: "Commander Torres gazed through the viewport at the swirling atmosphere of Proxima b, humanity's first extrasolar colony. The strange radio signals had started three days ago, pulsing from deep within the planet's unexplored northern continent. As the exploration team prepared their descent, the ship's AI analyzed the pattern: it wasn't random noise—it was a response to their arrival, a message in a language that predated human existence."
+                },
+                mystery: {
+                    title: "The Lighthouse Keeper's Secret",
+                    content: "For fifty years, old man Harlow had maintained the lighthouse on Raven's Point without fail. When he vanished without a trace one stormy night, leaving only a journal filled with cryptic symbols, the townspeople whispered of madness. Detective Morgan didn't believe in ghost stories, but as she deciphered the journal's code, she discovered something had been hiding in plain sight all along—something that explained why ships passing Raven's Point had been disappearing for centuries."
+                },
+                fairytale: {
+                    title: "The Little Clockwork Bird",
+                    content: "In a kingdom where music had been forbidden, a clockmaker crafted a tiny mechanical bird that sang the most beautiful melodies. The king's daughter, who had never heard music before, found the clockwork bird in the palace garden and was enchanted by its song. When the jealous king discovered the bird, he ordered it destroyed, but by then its melodies had spread throughout the kingdom, awakening something magical that had been slumbering in people's hearts for generations."
+                }
+            };
+
+            // Apply template to form
+            templateButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const templateKey = this.getAttribute('data-template');
+                    const template = storyTemplates[templateKey];
+                    
+                    if (template) {
+                        storyTitleInput.value = template.title;
+                        storyContentInput.value = template.content;
+                    }
+                });
+            });
+
+            // Update the generation status message
+            function updateGenerationStatus(type, message) {
+                generationStatus.className = 'generation-status';
+                generationStatus.classList.add(`status-${type}`);
+                statusMessage.textContent = message;
+                generationStatus.style.display = 'flex';
+                
+                if (type === 'loading') {
+                    document.getElementById('status-spinner').style.display = 'block';
+                } else {
+                    document.getElementById('status-spinner').style.display = 'none';
+                }
+                
+                // Hide status after a few seconds for success/error messages
+                if (type === 'success' || type === 'error') {
+                    setTimeout(() => {
+                        generationStatus.style.display = 'none';
+                    }, 5000);
+                }
+            }
+
+            // Function to generate text using Hugging Face Inference API
+            async function generateTextWithHuggingFace(prompt, apiKey) {
+                const model = textModelSelect.value;
+                const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
+                
+                updateGenerationStatus('loading', `Generating story scenes with ${model.split('/')[1]}...`);
+                
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${apiKey}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            inputs: prompt,
+                            parameters: {
+                                max_new_tokens: 500,
+                                temperature: 0.7,
+                                top_p: 0.9,
+                                do_sample: true
+                            }
+                        })
+                    });
+                    
+                    // Check if the request was successful
+                    if (!response.ok) {
+                        // If model is loading, Hugging Face returns 503 status
+                        if (response.status === 503) {
+                            const error = await response.json();
+                            const waitTime = error.estimated_time || 20;
+                            
+                            updateGenerationStatus('loading', `Text model is loading, waiting ${waitTime} seconds...`);
+                            
+                            // Wait and retry if model is loading
+                            await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
+                            return generateTextWithHuggingFace(prompt, apiKey);
+                        }
+                        throw new Error(`API request failed with status ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    updateGenerationStatus('success', 'Story scenes generated successfully!');
+                    
+                    // Handle different response formats based on the model
+                    if (Array.isArray(result) && result[0] && result[0].generated_text) {
+                        return result[0].generated_text;
+                    } else if (typeof result === 'object' && result.generated_text) {
+                        return result.generated_text;
+                    } else if (typeof result === 'string') {
+                        return result;
+                    } else {
+                        console.log("Unexpected response format:", result);
+                        return JSON.stringify(result);
+                    }
+                } catch (error) {
+                    updateGenerationStatus('error', `Text generation error: ${error.message}`);
+                    console.error("Error generating text:", error);
+                    throw error;
+                }
+            }
+
+            // Function to generate an image using Hugging Face Inference API
+            async function generateImageWithHuggingFace(prompt, apiKey) {
+                const model = imageModelSelect.value;
+                const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
+                
+                updateGenerationStatus('loading', `Generating image with ${model.split('/')[1]}...`);
+                
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${apiKey}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            inputs: prompt,
+                            parameters: {
+                                negative_prompt: "blurry, bad quality, worst quality, distorted, deformed",
+                                num_inference_steps: 50,
+                                guidance_scale: 7.5
+                            }
+                        })
+                    });
+                    
+                    // Check if the request was successful
+                    if (!response.ok) {
+                        // If model is loading, Hugging Face returns 503 status
+                        if (response.status === 503) {
+                            const error = await response.json();
+                            const waitTime = error.estimated_time || 20;
+                            
+                            updateGenerationStatus('loading', `Image model is loading, waiting ${waitTime} seconds...`);
+                            
+                            // Wait and retry if model is loading
+                            await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
+                            return generateImageWithHuggingFace(prompt, apiKey);
+                        }
+                        throw new Error(`API request failed with status ${response.status}`);
+                    }
+                    
+                    updateGenerationStatus('success', 'Image generated successfully!');
+                    
+                    // The response is the image as a blob
+                    const imageBlob = await response.blob();
+                    
+                    // Convert blob to data URL for display
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(imageBlob);
+                    });
+                } catch (error) {
+                    updateGenerationStatus('error', `Image generation error: ${error.message}`);
+                    console.error("Error generating image:", error);
+                    throw error;
+                }
+            }
+
+            // Function to parse scenes from generated text
+            function parseScenes(generatedText, sceneCount) {
+                let scenes = [];
+                
+                // First try to find content that may be marked with "Scene 1", "Scene 2", etc.
+                const sceneRegex = /Scene\s*(\d+)\s*:(.*?)(?=Scene\s*\d+\s*:|$)/gis;
+                let match;
+                
+                while ((match = sceneRegex.exec(generatedText)) !== null) {
+                    scenes.push({
+                        title: `Scene ${match[1]}`,
+                        text: match[2].trim()
+                    });
+                }
+                
+                // If we couldn't find properly formatted scenes, try to split by paragraphs
+                if (scenes.length < sceneCount) {
+                    scenes = [];
+                    const paragraphs = generatedText.split(/\n\n+/);
+                    
+                    for (let i = 0; i < Math.min(sceneCount, paragraphs.length); i++) {
+                        if (paragraphs[i].trim()) {
+                            scenes.push({
+                                title: `Scene ${i + 1}`,
+                                text: paragraphs[i].trim()
+                            });
+                        }
+                    }
+                }
+                
+                // If we still don't have enough scenes, just split the text evenly
+                if (scenes.length < sceneCount) {
+                    scenes = [];
+                    const totalLength = generatedText.length;
+                    const chunkSize = Math.floor(totalLength / sceneCount);
+                    
+                    for (let i = 0; i < sceneCount; i++) {
+                        const start = i * chunkSize;
+                        const end = (i === sceneCount - 1) ? totalLength : (i + 1) * chunkSize;
+                        const chunk = generatedText.substring(start, end).trim();
+                        
+                        if (chunk) {
+                            scenes.push({
+                                title: `Scene ${i + 1}`,
+                                text: chunk
+                            });
+                        }
+                    }
+                }
+                
+                return scenes.slice(0, sceneCount);
+            }
+
+            // Function to generate a fallback SVG illustration
+            function generateFallbackSvgIllustration(sceneIndex) {
+                // Different colors for different scenes
+                const colors = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+                const primaryColor = colors[sceneIndex % colors.length];
+                
+                // Simple SVG placeholder
+                return `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+                    <rect width="800" height="500" fill="%23f3f4f6" />
+                    <rect x="100" y="100" width="600" height="300" fill="${primaryColor}" opacity="0.2" />
+                    <rect x="200" y="150" width="400" height="200" fill="${primaryColor}" opacity="0.4" />
+                    <rect x="300" y="200" width="200" height="100" fill="${primaryColor}" opacity="0.8" />
+                    <text x="400" y="250" font-family="sans-serif" font-size="24" text-anchor="middle" fill="%231F2937">Scene ${sceneIndex + 1}</text>
+                </svg>`.replace(/#/g, '%23');
+            }
+
+        // Main function to generate the illustrated story
+        async function generateStory() {
+            // Validate inputs
+            if (!storyContentInput.value.trim()) {
+                errorAlert.style.display = 'block';
+                errorAlert.textContent = 'Please enter a story description';
+                return;
+            }
+            
+            if (!huggingfaceKeyInput.value.trim()) {
+                errorAlert.style.display = 'block';
+                errorAlert.textContent = 'Please enter your Hugging Face API key';
+                return;
+            }
+
+            // Hide error, disable button and show loading
+            errorAlert.style.display = 'none';
+            generateBtn.disabled = true;
+            loadingElement.style.display = 'flex';
+            resultContainer.style.display = 'none';
+            updateGenerationStatus('loading', 'Starting the story generation process...');
+
+            try {
+                const apiKey = huggingfaceKeyInput.value.trim();
+                const title = storyTitleInput.value || "Untitled Story";
+                const content = storyContentInput.value.trim();
+                const sceneCount = parseInt(sceneCountSelect.value);
+                const artStyle = artStyleSelect.value;
+                
+                // Step 1: Generate story scenes using text model
+                const textPrompt = `Write a short story titled "${title}" based on this description: ${content}. 
+                    Divide the story into exactly ${sceneCount} scenes. For each scene, write 1-2 paragraphs.
+                    Label each section as "Scene 1: ", "Scene 2: ", etc.`;
+                
+                let sceneContent;
+                try {
+                    sceneContent = await generateTextWithHuggingFace(textPrompt, apiKey);
+                } catch (error) {
+                    console.error("Failed to generate story text:", error);
+                    // Fallback: Create basic scenes from the user's input
+                    sceneContent = `Scene 1: ${content}`;
+                    for (let i = 2; i <= sceneCount; i++) {
+                        sceneContent += `\n\nScene ${i}: Continuation of the story...`;
+                    }
+                }
+                
+                // Step 2: Parse the generated text into scenes
+                let scenes = parseScenes(sceneContent, sceneCount);
+                
+                // Step 3: Generate illustrations for each scene
+                for (let i = 0; i < scenes.length; i++) {
+                    updateGenerationStatus('loading', `Generating illustration for Scene ${i + 1}...`);
+                    
+                    const scene = scenes[i];
+                    // Create image prompt from scene text
+                    const imagePrompt = `${scene.text.substring(0, 300)}... in ${artStyle}, high quality, detailed illustration`;
+                    
+                    try {
+                        // Generate image using the API
+                        scene.illustration = await generateImageWithHuggingFace(imagePrompt, apiKey);
+                    } catch (error) {
+                        console.error(`Failed to generate image for scene ${i + 1}:`, error);
+                        // Use fallback SVG if image generation fails
+                        scene.illustration = generateFallbackSvgIllustration(i);
+                    }
+                }
+                
+                // Step 4: Save the complete story to the current state
+                currentStory = {
+                    title: title,
+                    scenes: scenes
+                };
+                
+                currentSceneIndex = 0;
+                
+                // Step 5: Update the UI with the generated story
+                updateSceneNavigation();
+                showScene(0);
+                
+                // Hide loading, enable button and show results
+                loadingElement.style.display = 'none';
+                resultContainer.style.display = 'block';
+                updateGenerationStatus('success', 'Story generated successfully!');
+                
+            } catch (error) {
+                console.error('Error in story generation:', error);
+                errorAlert.style.display = 'block';
+                errorAlert.textContent = `An error occurred: ${error.message}`;
+                loadingElement.style.display = 'none';
+            } finally {
+                generateBtn.disabled = false;
+            }
+        }
+
+        // Function to set up scene navigation
+        function updateSceneNavigation() {
+            // Clear existing nav buttons
+            sceneNavElement.innerHTML = '';
+            
+            // Create a button for each scene
+            for (let i = 0; i < currentStory.scenes.length; i++) {
+                const button = document.createElement('button');
+                button.textContent = `Scene ${i + 1}`;
+                button.classList.add('scene-button');
+                
+                if (i === currentSceneIndex) {
+                    button.classList.add('active-scene');
+                }
+                
+                button.addEventListener('click', () => showScene(i));
+                sceneNavElement.appendChild(button);
+            }
+        }
+
+        // Function to display a specific scene
+        function showScene(index) {
+            if (!currentStory || !currentStory.scenes[index]) return;
+            
+            currentSceneIndex = index;
+            const scene = currentStory.scenes[index];
+            
+            // Update navigation buttons
+            const buttons = sceneNavElement.querySelectorAll('.scene-button');
+            buttons.forEach((btn, i) => {
+                if (i === index) {
+                    btn.classList.add('active-scene');
+                } else {
+                    btn.classList.remove('active-scene');
+                }
+            });
+            
+            // Update scene content
+            sceneTitleElement.textContent = scene.title;
+            sceneTextElement.innerHTML = marked.parse(scene.text);
+            
+            // Update illustration
+            if (scene.illustration.startsWith('data:')) {
+                // It's an image (data URL)
+                illustrationPlaceholder.style.display = 'none';
+                illustrationImg.src = scene.illustration;
+                illustrationImg.style.display = 'block';
+            } else {
+                // It's SVG content (fallback)
+                illustrationPlaceholder.innerHTML = scene.illustration;
+                illustrationPlaceholder.style.display = 'block';
+                illustrationImg.style.display = 'none';
+            }
+        }
+
+        // Function to save/export the story
+        function saveStory() {
+            if (!currentStory) {
+                updateGenerationStatus('error', 'No story to save yet!');
+                return;
+            }
+            
+            try {
+                // Create a simple HTML representation of the story
+                let storyHtml = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>${currentStory.title}</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+                            .scene { margin-bottom: 30px; }
+                            h1 { color: #4f46e5; }
+                            h2 { color: #6366f1; margin-top: 40px; }
+                            img { max-width: 100%; border-radius: 8px; }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>${currentStory.title}</h1>
+                `;
+                
+                // Add each scene
+                currentStory.scenes.forEach(scene => {
+                    storyHtml += `
+                        <div class="scene">
+                            <h2>${scene.title}</h2>
+                            <p>${scene.text}</p>
+                            <img src="${scene.illustration}" alt="${scene.title}">
+                        </div>
+                    `;
+                });
+                
+                storyHtml += `
+                    </body>
+                    </html>
+                `;
+                
+                // Create a blob and download link
+                const blob = new Blob([storyHtml], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${currentStory.title.replace(/\s+/g, '-').toLowerCase()}.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                updateGenerationStatus('success', 'Story saved successfully!');
+            } catch (error) {
+                console.error('Error saving story:', error);
+                updateGenerationStatus('error', `Failed to save: ${error.message}`);
+            }
+        }
+
+        // Set up event listeners
+        generateBtn.addEventListener('click', generateStory);
+        saveBtn.addEventListener('click', saveStory);
+
+        // Hide status message initially
+        generationStatus.style.display = 'none';
+
+        // At the very end of the file, add:
+    });
+    </script>
+</body>
+</html>
